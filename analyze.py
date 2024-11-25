@@ -1,9 +1,17 @@
 import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
+from nltk.sentiment import SentimentIntensityAnalyzer
+import nltk
+
+# Step 0: Download the VADER lexicon
+nltk.download('vader_lexicon')
+
+# Initialize VADER sentiment analyzer
+sia = SentimentIntensityAnalyzer()
 
 # Step 1: Connect to the SQLite database and load data
-db_path = r'c:\Users\nesaul42\Downloads\feedback.db'  # Replace with the path to your .db file
+db_path = r'C:\Users\sauln\OneDrive\Documents\CSC Practice\feedback.db'  # Replace with the path to your .db file
 
 # Connect to the database
 conn = sqlite3.connect(db_path)
@@ -43,26 +51,40 @@ def categorize_feedback_combined(comment):
     else:
         return 'Other'
 
+# Step 3: Define a sentiment analysis function
+def analyze_sentiment(comment):
+    score = sia.polarity_scores(comment)['compound']
+    if score > 0.05:
+        return 'Positive'
+    elif score < -0.05:
+        return 'Negative'
+    else:
+        return 'Neutral'
 
-
-
-# Step 3: Apply categorization to the comments
-# Apply the combined categorization function
+# Step 4: Apply categorization and sentiment analysis
 feedback_df['Category'] = feedback_df['comment'].apply(categorize_feedback_combined)
+feedback_df['Sentiment'] = feedback_df['comment'].apply(analyze_sentiment)
 
-# Check the distribution of combined categories
+# Step 5: Check the distribution of categories and sentiments
 print(feedback_df['Category'].value_counts())
+print(feedback_df['Sentiment'].value_counts())
 
-# Save the categorized data
-feedback_df.to_csv('combined_categorized_feedback.csv', index=False)
+# Save the categorized and sentiment-analyzed data
+feedback_df.to_csv('categorized_sentiment_feedback.csv', index=False)
 
-# Visualize the results
-feedback_df['Category'].value_counts().plot(kind='bar', color='skyblue')
-plt.title('Combined Feedback Categories')
+# Step 6: Visualize the results
+# Category distribution
+feedback_df['Category'].value_counts().plot(kind='bar', color='skyblue', title='Feedback Categories')
 plt.xlabel('Category')
 plt.ylabel('Count')
 plt.tight_layout()
-plt.savefig('combined_feedback_categories.png')
+plt.savefig('feedback_categories.png')
 plt.show()
 
-
+# Sentiment distribution
+feedback_df['Sentiment'].value_counts().plot(kind='bar', color='salmon', title='Feedback Sentiment')
+plt.xlabel('Sentiment')
+plt.ylabel('Count')
+plt.tight_layout()
+plt.savefig('feedback_sentiments.png')
+plt.show()
